@@ -1,0 +1,8 @@
+# Drafting prompt v1 (RAG-M4 S3 T2 correction, owner 2026-11-23). Protocol v0 and its prompt
+# files are unchanged; v1 replaces only the T2 template and is used with the v0 draft_common.md.
+# Changing a v1 prompt means updating its hash here (a deliberate prompt change).
+
+[prompts]
+"v1/draft_T2.md" = "035c24165314e4aea8271fdfe3d5dbd0269d96025bf72e2cb6ff339faf8bde63"
+"v1/draft_common.md" = "86f065b8534162b89b666a2b72c1ba879f81466b50b493acc6333128934e9926"
+"v1/draft_T5.md" = "60a2f8e9b3449724441a537c96a5465cdf6714af466a2eae0130e87b4c3a6352"

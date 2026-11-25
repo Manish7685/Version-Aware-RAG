@@ -1,0 +1,10 @@
+--- a/src/version_aware_rag/retrieval/methods.py
++++ b/src/version_aware_rag/retrieval/methods.py
+@@ -51,6 +51,7 @@
+ 
+ 
+ def tokenize(text: str) -> list[str]:
++    """Lower-cased word tokens for BM25 (a docstring-only change: behaviour is identical)."""
+     return _TOKEN.findall(text.lower())
+ 
+ 

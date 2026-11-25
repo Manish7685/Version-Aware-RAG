@@ -1,0 +1,6 @@
+# Normalise to LF everywhere. Shell scripts must be LF to run on Linux CI, and the
+# hash-pinned probe artefacts are LF bytes; CRLF conversion on checkout would change their sha256.
+* text=auto eol=lf
+*.sh text eol=lf
+scripts/probes/rag_m1_probes.py -text
+scripts/probes/expected/*.jsonl -text

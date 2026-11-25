@@ -1,0 +1,262 @@
+{
+ "T1-01": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T1-03": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T1-04": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T1-05": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T1-09": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T1-11": {
+  "ambiguous": false,
+  "decision": "accept_minor_edit",
+  "reason_codes": "R3"
+ },
+ "T1-12": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T1-14": {
+  "ambiguous": false,
+  "decision": "accept_minor_edit",
+  "reason_codes": "R3"
+ },
+ "T1-15": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T1-16": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T1-18": {
+  "ambiguous": false,
+  "decision": "reject",
+  "reason_codes": "R9"
+ },
+ "T1-19": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T1-20": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T2-05@1.4": {
+  "ambiguous": false,
+  "decision": "accept_minor_edit",
+  "reason_codes": "R4 R3"
+ },
+ "T2-05@1.5": {
+  "ambiguous": false,
+  "decision": "accept_minor_edit",
+  "reason_codes": "R4 R3"
+ },
+ "T2-05@2.0": {
+  "ambiguous": false,
+  "decision": "accept_minor_edit",
+  "reason_codes": "R4"
+ },
+ "T2-07@1.4": {
+  "ambiguous": false,
+  "decision": "accept_minor_edit",
+  "reason_codes": "R3"
+ },
+ "T2-07@1.5": {
+  "ambiguous": false,
+  "decision": "accept_minor_edit",
+  "reason_codes": "R3"
+ },
+ "T2-07@2.0": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T2-H01@1.5": {
+  "ambiguous": true,
+  "decision": "accept_major_edit",
+  "reason_codes": "R1 R9"
+ },
+ "T2-H01@2.0": {
+  "ambiguous": true,
+  "decision": "accept_major_edit",
+  "reason_codes": "R1"
+ },
+ "T3-01": {
+  "ambiguous": false,
+  "decision": "reject",
+  "reason_codes": "R7"
+ },
+ "T3-02": {
+  "ambiguous": true,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T3-06": {
+  "ambiguous": true,
+  "decision": "accept_major_edit",
+  "reason_codes": "R4 R6"
+ },
+ "T3-07": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T3-09": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T3-10": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T3-11": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T3-12": {
+  "ambiguous": false,
+  "decision": "accept_minor_edit",
+  "reason_codes": "R4"
+ },
+ "T3-14": {
+  "ambiguous": false,
+  "decision": "accept_minor_edit",
+  "reason_codes": "R9"
+ },
+ "T3-15": {
+  "ambiguous": false,
+  "decision": "accept_minor_edit",
+  "reason_codes": "R3 R4"
+ },
+ "T3-16": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T3-17": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T4-01": {
+  "ambiguous": true,
+  "decision": "reject",
+  "reason_codes": "R4"
+ },
+ "T4-04": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T4-05": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T4-06": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T4-08": {
+  "ambiguous": false,
+  "decision": "reject",
+  "reason_codes": "R4 R6 R7"
+ },
+ "T4-13": {
+  "ambiguous": true,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T4-14": {
+  "ambiguous": true,
+  "decision": "reject",
+  "reason_codes": "R4"
+ },
+ "T5-01": {
+  "ambiguous": false,
+  "decision": "reject",
+  "reason_codes": "R2 R4"
+ },
+ "T5-02": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T5-03": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T5-04": {
+  "ambiguous": false,
+  "decision": "reject",
+  "reason_codes": "R2 R4"
+ },
+ "T5-05": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T5-07": {
+  "ambiguous": false,
+  "decision": "reject",
+  "reason_codes": "R2"
+ },
+ "T5-08": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T5-09": {
+  "ambiguous": false,
+  "decision": "reject",
+  "reason_codes": "R7"
+ },
+ "T5-10": {
+  "ambiguous": false,
+  "decision": "reject",
+  "reason_codes": "R2 R4"
+ },
+ "T5-11": {
+  "ambiguous": false,
+  "decision": "reject",
+  "reason_codes": "R7"
+ },
+ "T5-12": {
+  "ambiguous": false,
+  "decision": "accept",
+  "reason_codes": ""
+ },
+ "T5-13": {
+  "ambiguous": false,
+  "decision": "reject",
+  "reason_codes": "R2"
+ }
+}

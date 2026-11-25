@@ -1,0 +1,99 @@
+{
+  "chunker_version": "s4-1",
+  "chunking_config_sha256": "cd7995debe6b22ccb0f9fa78208acbc1590658b4512342ebf7bc8f93feed75f0",
+  "corpus_manifest_sha256": "a5d953fb4422f93c98268e1fd2fdfc58e287d1fcb42d974fa3c0a26b5764e567",
+  "counts": {
+    "by_unit_kind": {
+      "prose": 22
+    },
+    "by_version": {
+      "1.2": 11,
+      "1.3": 11
+    },
+    "chunks": 22,
+    "chunks_with_q7": 18,
+    "empty_sections": 0,
+    "not_redistributable_chunks": 22,
+    "oversize_by_reason": {},
+    "q7_transformations": {
+      "q7_compare_url_shortened": 4,
+      "q7_contributor_handle_masked": 2,
+      "q7_pr_attribution_shortened": 297,
+      "q7_pr_url_shortened": 2
+    },
+    "releases": 4,
+    "split_inside_block_chunks": 14
+  },
+  "generator": "vrag corpus releases chunk (RAG-M3 S4d)",
+  "library": "duckdb",
+  "output": {
+    "bytes": 68059,
+    "path": "data/build/chunks/github_releases.jsonl",
+    "records": 22,
+    "sha256": "ad110e6b75a02e86bf2844404ca5f40caf1c044667489e6b34e62db2f3f3057c"
+  },
+  "parser_version": "s3b-1",
+  "releases": [
+    {
+      "body_bytes": 10583,
+      "body_sha256": "3c2d8e0de4a56f3cf795e70e9a20ccb3e3582f77dc1eebd5e490014f3c08b8d4",
+      "chunks": 6,
+      "introduced_in": "1.2.1",
+      "q7_transformations": {
+        "q7_compare_url_shortened": 1,
+        "q7_pr_attribution_shortened": 85
+      },
+      "release_id": 203798808,
+      "tag": "v1.2.1",
+      "verification": "verified",
+      "version": "1.2"
+    },
+    {
+      "body_bytes": 7733,
+      "body_sha256": "803880ca42eb79676bf8ac76154616441e1a9cf3080f4854612be803eb0cabfa",
+      "chunks": 5,
+      "introduced_in": "1.2.2",
+      "q7_transformations": {
+        "q7_compare_url_shortened": 1,
+        "q7_contributor_handle_masked": 1,
+        "q7_pr_attribution_shortened": 66
+      },
+      "release_id": 210741329,
+      "tag": "v1.2.2",
+      "verification": "verified",
+      "version": "1.2"
+    },
+    {
+      "body_bytes": 11043,
+      "body_sha256": "f9febe970d61bcd8af89fe4ced6dfd234105a34ed1ab3263655b0efb378d7408",
+      "chunks": 6,
+      "introduced_in": "1.3.1",
+      "q7_transformations": {
+        "q7_compare_url_shortened": 1,
+        "q7_pr_attribution_shortened": 93,
+        "q7_pr_url_shortened": 1
+      },
+      "release_id": 225478305,
+      "tag": "v1.3.1",
+      "verification": "verified",
+      "version": "1.3"
+    },
+    {
+      "body_bytes": 6370,
+      "body_sha256": "e86f15c67ee2bf8cfe4c08bd186666e7cbbbf740cb764061903569fe48240074",
+      "chunks": 5,
+      "introduced_in": "1.3.2",
+      "q7_transformations": {
+        "q7_compare_url_shortened": 1,
+        "q7_contributor_handle_masked": 1,
+        "q7_pr_attribution_shortened": 53,
+        "q7_pr_url_shortened": 1
+      },
+      "release_id": 230414582,
+      "tag": "v1.3.2",
+      "verification": "verified",
+      "version": "1.3"
+    }
+  ],
+  "schema_version": 1
+}

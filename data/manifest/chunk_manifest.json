@@ -1,0 +1,102 @@
+{
+  "chunker_version": "s4-1",
+  "chunking_config_sha256": "cd7995debe6b22ccb0f9fa78208acbc1590658b4512342ebf7bc8f93feed75f0",
+  "corpus_manifest_sha256": "a5d953fb4422f93c98268e1fd2fdfc58e287d1fcb42d974fa3c0a26b5764e567",
+  "counts": {
+    "api_units": 10670,
+    "by_source_kind": {
+      "docs_page": 31412,
+      "migration_guide": 26,
+      "release_post": 220
+    },
+    "by_unit_kind": {
+      "api_entry": 10817,
+      "prose": 15605,
+      "prose_merged": 5236
+    },
+    "by_version": {
+      "1.2": 4757,
+      "1.3": 5500,
+      "1.4": 5794,
+      "1.5": 6456,
+      "2.0": 9151
+    },
+    "chunks": 31658,
+    "empty_sections_by_reason": {
+      "no_source_content": 84,
+      "railroad_diagram_removed": 109
+    },
+    "list_item_group_chunks": 70,
+    "merged_chunks": 5236,
+    "merged_sections": 13678,
+    "not_redistributable_chunks": 220,
+    "overlap_chunks": 216,
+    "oversize_by_reason": {
+      "api_entry_block": 4,
+      "code_block": 164,
+      "list_item": 3
+    },
+    "pages": 2022,
+    "railroad_records": {
+      "on_chunks": 96,
+      "on_empty_sections": 109
+    },
+    "split_parts": 2273,
+    "split_units": 661,
+    "table_row_group_chunks": 799,
+    "token_percentiles": {
+      "max": 1402,
+      "median": 64,
+      "min": 4,
+      "p10": 20,
+      "p25": 35,
+      "p75": 129,
+      "p90": 275,
+      "p99": 487
+    }
+  },
+  "files": [
+    {
+      "bytes": 13464853,
+      "path": "1.2.jsonl",
+      "records": 4757,
+      "sha256": "e7b5553179955604289b049d51385e19d0b92591d062445ad3de7d409e6b2d43"
+    },
+    {
+      "bytes": 15635166,
+      "path": "1.3.jsonl",
+      "records": 5500,
+      "sha256": "0e1f489f956d761494f74f11ef2414b34bf41366445f80adee9893119a3f17bf"
+    },
+    {
+      "bytes": 16502625,
+      "path": "1.4.jsonl",
+      "records": 5794,
+      "sha256": "490dd7b9df50d5815631129a09e11666fa5b8896e45660a012acb5144ffd70eb"
+    },
+    {
+      "bytes": 18542102,
+      "path": "1.5.jsonl",
+      "records": 6456,
+      "sha256": "5c25ed2cdbabe1da55c127fd32fb33e7bf25593be932e45ce672f82505c13930"
+    },
+    {
+      "bytes": 26516905,
+      "path": "2.0.jsonl",
+      "records": 9151,
+      "sha256": "957f4302741f8aac4cb1edbb8b8339c34763d1ae21000a3aecc9c0dc2d4f9e4c"
+    },
+    {
+      "bytes": 50702,
+      "path": "empty_sections.jsonl",
+      "records": 193,
+      "sha256": "88c79a38a38fdb4c4774779f65c44c179aecdd94e915775598d0a9b27a9c5bce"
+    }
+  ],
+  "generator": "vrag corpus chunk (RAG-M3 S4c)",
+  "library": "duckdb",
+  "output_dir": "data/build/chunks",
+  "parser_version": "s3b-1",
+  "schema_version": 1,
+  "source_commit": "d01484462710d49206816c9eeaeb822361ebe81c"
+}

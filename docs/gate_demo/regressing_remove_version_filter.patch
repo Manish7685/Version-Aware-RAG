@@ -1,0 +1,12 @@
+--- a/src/version_aware_rag/retrieval/methods.py
++++ b/src/version_aware_rag/retrieval/methods.py
+@@ -37,8 +37,7 @@
+     scores: np.ndarray, corpus: RetrievalCorpus, version: str | None, k: int
+ ) -> list[tuple[str, float]]:
+     s = scores.astype(np.float64).copy()
+-    if version is not None:
+-        s[~np.asarray(corpus.mask(version))] = -np.inf
++    # Demo regression: the version filter is skipped, so incompatible chunks compete again.
+     k = min(k, int(np.isfinite(s).sum()))
+     if k <= 0:
+         return []

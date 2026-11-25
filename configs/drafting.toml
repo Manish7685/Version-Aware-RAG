@@ -1,0 +1,149 @@
+# Gemini-assisted drafting of pilot candidates (RAG-M4 S3; RAG-M1_design.md §3.4 step 3, §3.5
+# step 3; benchmark/protocol/protocol_v0.md §10).
+#
+# Model chosen by the owner (2026-11-23) and verified on the official models page
+# (aistudio.google.com/docs/models: "Gemini 3.5 Flash-Lite", Stable, code gemini-3.5-flash-lite;
+# pricing page: free tier "Free of charge"). No other model is ever tried automatically. The API
+# key comes only from VRAG_GEMINI_API_KEY and is never printed or stored.
+
+[model]
+id = "gemini-3.5-flash-lite"
+temperature = 0.2
+max_output_tokens = 2048
+
+# The owner's Google AI Studio quota for this model (confirmed 2026-11-23). The application limits
+# below must stay under it; the configuration is rejected otherwise.
+[account_quota]
+requests_per_minute = 15
+input_tokens_per_minute = 250000
+requests_per_day = 500
+
+# Enforced across runs and restarts by benchmark/quota.py (ledger benchmark/drafts/
+# quota_ledger.json, git-ignored). Every attempt counts, retries included. The daily limit is a
+# rolling 24-hour window, so every calendar day (Google resets at midnight Pacific) stays under it.
+# One run at a time (benchmark/drafts/run.lock), one request at a time.
+[limits]
+requests_per_minute = 10
+input_tokens_per_minute = 200000
+requests_per_day = 400
+max_requests_per_run = 400
+min_seconds_between_requests = 6.0
+max_retries = 2
+backoff_base_seconds = 2.0
+backoff_jitter = 0.5
+max_backoff_seconds = 60.0
+
+# About 70 drafts for the 50-item pilot (design §3.4 step 3), in the protocol's T1-T5 ratio.
+[plan]
+T1 = 21
+T2 = 21
+T3 = 18
+T4 = 13  # owner approved 14; only 13 distinct T4 items exist with chg-2.0-09 excluded
+T5 = 14
+t2_three_version_sets = 5
+# T2 (owner, 2026-11-23): the fixed list of documentation-grounded changes from the offline
+# eligibility audit (D67); each set spans the boundary and its neighbour (three versions).
+# Passages: documentation-diff selection from each version's own pages. No substitution.
+t2_changes = ["chg-1.5-01", "chg-2.0-01", "chg-2.0-02", "chg-2.0-04", "chg-2.0-05", "chg-2.0-07", "chg-2.0-08"]
+# Held for manual review (documentation conflict), never counted: its original cached request.
+t2_held = ["chg-2.0-06"]
+t2_passages_per_version = 2
+# T3 order frozen (2026-11-23): the change that coverage put first when T1/T3/T4 were
+# 15/13/10, then plan order; raising other types' counts no longer reorders T3.
+t3_priority = ["chg-2.0-08"]
+# One extra T4 item (owner, 2026-11-23): chg-2.0-10 has no T4 item and documents its feature on
+# several pages of its own version; passages are taken one per distinct page.
+t4_extra = ["chg-2.0-10"]
+# Protocol v1 (owner, 2026-11-23): items drafted before v1 keep the v0 shared prompt and their
+# cached responses; new items (T1 > 19, T3 > 16, T5 > 11) use the v1 shared prompt.
+common_v0_through = { T1 = 19, T2 = 8, T3 = 16, T4 = 14, T5 = 11 }
+# T5 items whose drafts failed V1 (a gold span on a T5 item, protocol v0 §5.6): redrafted with the
+# v1 shared and T5 prompts (design §3.4 step 7).
+redraft_v1 = ["T5-03", "T5-08", "T5-09", "T5-12", "T5-14"]
+max_passage_chars = 2500
+max_keyword_passages_per_version = 2
+
+# Per pilot candidate: the identifiers used to find permitted passages (MIT docs chunks that
+# contain them), and t5 = the side of the boundary where the feature is absent, if any
+# ("before" for an introduction, "after" for a removal, "" when only behaviour changed).
+[changes."chg-1.2-01"]
+keywords = ["map_extract", "element_at"]
+t5 = ""
+
+[changes."chg-1.3-01"]
+keywords = ["lambda x:"]
+t5 = "before"
+
+[changes."chg-1.3-02"]
+keywords = ["uuid_extract_version"]
+t5 = "before"
+
+[changes."chg-1.4-01"]
+keywords = ["MERGE INTO"]
+t5 = "before"
+
+[changes."chg-1.4-02"]
+keywords = ["make_timestamp_ms"]
+t5 = "before"
+
+[changes."chg-1.4-03"]
+keywords = ["struct_contains"]
+t5 = "before"
+
+[changes."chg-1.5-01"]
+keywords = ["date_trunc"]
+t5 = ""
+
+[changes."chg-1.5-02"]
+keywords = ["SHOW SCHEMAS"]
+t5 = "before"
+
+[changes."chg-1.5-03"]
+keywords = ["GEOMETRY"]
+t5 = ""  # not absent: type existed in the spatial extension before 1.5 (moved into the core)
+
+[changes."chg-1.5-04"]
+keywords = ["days_in_month"]
+t5 = "before"
+
+[changes."chg-2.0-01"]
+keywords = ["Division by zero", "division by zero"]
+t5 = ""
+
+[changes."chg-2.0-02"]
+keywords = ["list_transform"]
+t5 = ""
+
+[changes."chg-2.0-03"]
+keywords = ["NULL AS"]
+t5 = ""
+
+[changes."chg-2.0-04"]
+keywords = ["fetchone"]
+t5 = ""  # not absent: fetchone still exists on connections and cursors in 2.0; only relations lost it
+
+[changes."chg-2.0-05"]
+keywords = ["regular expression"]
+t5 = ""
+
+[changes."chg-2.0-06"]
+keywords = ["factorial"]
+t5 = ""
+
+[changes."chg-2.0-07"]
+keywords = ["BLOB"]
+t5 = ""
+
+[changes."chg-2.0-08"]
+keywords = ["preserve_identifier_case"]
+t5 = ""
+
+[changes."chg-2.0-09"]
+keywords = ["custom_profiling_settings"]
+t5 = "after"
+exclude_types = ["T3", "T4"]
+exclude_reason = "owner 2026-11-23: kept excluded, not drafted as T3 or T4; T3 taxonomy ambiguous for a removal; inventory record kept"
+
+[changes."chg-2.0-10"]
+keywords = ["CREATE TRIGGER"]
+t5 = "before"

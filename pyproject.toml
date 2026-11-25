@@ -1,0 +1,104 @@
+[project]
+name = "version-aware-rag"
+version = "0.1.0"
+description = "Version-aware retrieval benchmark, retrievers and regression-gated evaluation over versioned DuckDB documentation."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+requires-python = ">=3.12,<3.13"
+# Runtime dependencies are kept to what RAG-M2 actually uses. Exact versions are pinned in uv.lock.
+dependencies = [
+    "bm25s>=0.2,<0.3",
+    "faiss-cpu>=1.9,<2",
+    "fastapi>=0.115,<1",
+    "httpx>=0.27,<1",
+    "markdown-it-py==4.3.0",
+    "numpy>=2,<3",
+    "pydantic>=2.14,<3",
+    "pydantic-settings>=2.16,<3",
+    "sentence-transformers>=5,<6",
+    "torch>=2.15,<3",  # direct, so the Linux CPU index source applies
+    "uvicorn>=0.32,<1",
+]
+
+[project.scripts]
+vrag = "version_aware_rag.cli:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4,<3",
+    "pre-commit>=4.7,<5",
+    "pytest>=9.2,<10",
+    "ruff==0.17.6",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.9,<0.14"]
+build-backend = "uv_build"
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+# Byte-for-byte copy of the RAG-M1 probe script; its sha256 is pinned in the
+# version manifest, so it must never be reformatted. Markdown is excluded because the design
+# docs embed verbatim, hash-recorded code that ruff would otherwise reformat.
+extend-exclude = ["scripts/probes/rag_m1_probes.py", "*.md"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "UP",       # pyupgrade
+    "SIM",      # simplify
+    "RUF",      # ruff-specific
+    "PTH",      # prefer pathlib
+    "S",        # bandit-style security checks
+]
+ignore = ["S603"]  # subprocess without shell=True is the safe form; reviewed per call
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]  # assert is how pytest works
+"*.ipynb" = ["S101", "E402"]  # Colab cells: asserts as user-facing checks, imports per cell
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+mypy_path = "src"
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+# Untyped third-party retrieval libraries (no stubs or py.typed marker).
+module = [
+    "bm25s", "bm25s.*", "faiss", "faiss.*",
+    "sentence_transformers", "sentence_transformers.*",
+    # Lazily imported heavy ML libraries (used as Any; absent from the pre-commit mypy env).
+    "torch", "torch.*", "transformers", "transformers.*", "huggingface_hub", "huggingface_hub.*",
+    "safetensors", "safetensors.*",
+]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+minversion = "9.0"
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+markers = [
+    "smoke: fast end-to-end checks that a fresh clone installs and runs",
+    "corpus: checks against the real fetched DuckDB snapshot (skipped without the cache)",
+]
+
+# CPU-only PyTorch on Linux (Docker image): PyPI's Linux torch wheel pulls the CUDA stack.
+# Windows and macOS keep PyPI torch (CPU builds there).
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

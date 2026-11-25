@@ -1,0 +1,35 @@
+# RAG-M3 S4 chunking configuration (owner decision S4-D6, 2026-11-21).
+# Kept separate from corpus.toml so that tuning the chunker never changes the source manifest's
+# config_sha256. The sha256 of this file is recorded on every chunk. Design:
+# docs/design/RAG-M3_S4_chunking.md.
+
+chunker_version = "s4-1"
+target_tokens = 350
+hard_limit_tokens = 512
+merge_below_tokens = 64
+overlap_ratio = 0.15
+boundary_levels = [1, 2, 3, 4, 5, 6]
+skip_h1_equal_to_title = true
+id_hex_chars = 20
+
+[api_detection]
+# R1: a header-less table whose first-column cells include all of these ...
+function_table_first_cells = ["Description"]
+# ... and at least one of these is a function-documentation table.
+function_table_other_cells = ["Example", "Result", "Alias", "Aliases", "Parameters", "Signature"]
+
+[oversize]
+# Owner Q3 (tables, code) and S4-D3 (lists, Sphinx API blocks). Recorded here, not tunable away.
+table = "split_between_rows_repeat_header"
+code = "keep_whole_flag"
+list = "split_between_top_level_items"
+api_entry_block = "keep_whole_flag"
+
+# Plan §4.6: chunked once, as source_kind = migration_guide, not also as docs pages.
+[[migration_guides]]
+path = "docs/2.0/operations_manual/migration.md"
+introduced_in = "2.0.0"
+
+[[migration_guides]]
+path = "docs/2.0/clients/python/migration.md"
+introduced_in = "2.0.0"

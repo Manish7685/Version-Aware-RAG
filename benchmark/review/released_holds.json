@@ -1,0 +1,17 @@
+{
+ "decision": "D2 (owner policy decision, 2026-11-24): release both T2-H01 drafts from hold as proposed review candidates. Not a review decision: each still needs the owner's item-level review; neither is human-verified.",
+ "released": [
+  {
+   "draft_id": "dq-6f13771ba044-1.5",
+   "item_id": "T2-H01@1.5",
+   "proposed_gold": "720",
+   "runtime_check": "canonical probe for chg-2.0-06 once the tree is committed"
+  },
+  {
+   "draft_id": "dq-6f13771ba044-2.0",
+   "item_id": "T2-H01@2.0",
+   "proposed_gold": "12",
+   "runtime_check": "canonical probe for chg-2.0-06 once the tree is committed"
+  }
+ ]
+}

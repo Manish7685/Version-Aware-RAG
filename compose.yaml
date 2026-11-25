@@ -1,0 +1,32 @@
+# Version-Aware RAG: one-command local run (RAG-M12). `docker compose up --build` builds the image
+# (see the Dockerfile) and serves the API and UI on http://127.0.0.1:8000.
+#
+# Before the first run, build the corpus and indexes on the host (they never enter the image):
+#   python -m uv run vrag corpus fetch && python -m uv run vrag corpus releases fetch
+#   python -m uv run vrag corpus build && python -m uv run vrag index build --methods bm25,dense
+# `/answer` additionally needs VRAG_GEMINI_API_KEY in the host environment; it is passed through at
+# run time only and never written into the image. Without it, `/answer` returns 503 and search,
+# compare and the UI still work.
+services:
+  app:
+    build: .
+    image: version-aware-rag:latest
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      VRAG_GEMINI_API_KEY: ${VRAG_GEMINI_API_KEY:-}
+    volumes:
+      - ./data:/app/data
+      - ./benchmark/drafts:/app/benchmark/drafts
+      - ${HF_HOME:-~/.cache/huggingface}:/home/app/.cache/huggingface
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+    restart: "no"

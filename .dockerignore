@@ -1,0 +1,20 @@
+# Docker build context. Restricted, built and local data never enter the image; the server reads
+# them from the `data/` and `benchmark/drafts/` mounts at run time (see the Dockerfile header).
+.git
+.venv
+.probe-envs
+**/__pycache__
+**/node_modules
+frontend/dist
+# Restricted sources (release notes and posts), the git-ignored chunks and indexes.
+data/cache
+data/build
+# data/evidence/local/ is the restricted span sidecar (RAG-M4 D1); the public evidence records
+# beside it are not used by the server. Both come from the `data/` mount when needed (the
+# /answer privacy audit reads the sidecar), so the whole directory stays out of the image.
+data/evidence
+# Gemini cache, drafts and the shared quota ledger (mounted so a container never starts a fresh
+# ledger).
+benchmark/drafts
+results
+.env

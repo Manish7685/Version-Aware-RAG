@@ -1,0 +1,55 @@
+# Run once: `uv run pre-commit install`. Run everything: `uv run pre-commit run --all-files`.
+# Hook versions are kept equal to uv.lock (checked by tests/unit/test_tooling_pins.py).
+#
+# Files that must stay byte-identical (hash-recorded in the RAG-M1 version manifest) are
+# excluded from every hook that rewrites files. Generated reports (docs/reports/) are excluded
+# too: they quote source lines verbatim and a test checks them against a fresh regeneration.
+# Patch files (docs/gate_demo/) are excluded: whitespace fixes would corrupt a unified diff.
+exclude: ^(scripts/probes/rag_m1_probes\.py|scripts/probes/expected/.*|docs/design/.*|docs/reports/.*|.*\.patch)$
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.6
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy (strict)
+        language: python
+        entry: mypy
+        pass_filenames: false
+        types_or: [python, pyi]
+        additional_dependencies:
+          - mypy==2.4.1
+          - pydantic==2.14.4
+          - pydantic-settings==2.16.3
+          - pytest==9.2.0
+          - markdown-it-py==4.3.0
+          - mdurl==0.1.2
+          - fastapi==0.165.0
+          - starlette==1.10.0
+          - uvicorn==0.54.0
+          - numpy==2.5.5
+          - httpx==0.28.1
+          - httpcore==1.0.9
+          - anyio==4.16.0
+          - typing-inspection==0.4.5
+          - annotated-doc==0.0.7

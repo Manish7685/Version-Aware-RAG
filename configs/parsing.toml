@@ -1,0 +1,101 @@
+# Parser configuration (RAG-M3 S3). Kept separate from corpus.toml so that parser changes never
+# alter the source manifest. Every page is still parsed; `excluded_pages` only marks pages that
+# must not enter the retrieval corpus, with the reason recorded in the parse output.
+
+site_base = "https://duckdb.org"
+
+# Reviewed individually in S3 (docs/design/RAG-M3_S3_parsing.md §5).
+[[excluded_pages]]
+path = "docs/1.2/index.md"
+kind = "landing"
+reason = "landing page: grid of navigation links; every target is its own page in the corpus"
+
+[[excluded_pages]]
+path = "docs/1.3/index.md"
+kind = "landing"
+reason = "landing page: grid of navigation links; every target is its own page in the corpus"
+
+[[excluded_pages]]
+path = "docs/1.4/index.md"
+kind = "landing"
+reason = "landing page: grid of navigation links; every target is its own page in the corpus"
+
+[[excluded_pages]]
+path = "docs/1.5/index.md"
+kind = "landing"
+reason = "landing page: grid of navigation links; every target is its own page in the corpus"
+
+[[excluded_pages]]
+path = "docs/2.0/index.md"
+kind = "landing"
+reason = "landing page: grid of navigation links; every target is its own page in the corpus"
+
+[[excluded_pages]]
+path = "docs/2.0/guides/overview.md"
+kind = "landing"
+reason = "guide index generated at build time by a Liquid loop over site data (cannot be rendered); remaining text is search/filter instructions"
+
+# Ten before/after samples (docs/reports/RAG-M3_S3_samples.md). `lines` limits the shown
+# excerpt of long pages; the whole page is always parsed.
+[[samples]]
+path = "docs/1.5/sql/introduction.md"
+label = "Ordinary documentation: prose, SQL examples, lists"
+lines = [1, 60]
+
+[[samples]]
+path = "docs/1.2/sql/functions/map.md"
+label = "Deep heading hierarchy (H2-H4) with function tables"
+lines = [1, 60]
+
+[[samples]]
+path = "docs/1.2/clients/python/reference/index.md"
+label = "Generated Sphinx HTML API reference (no sections; docstring field lists)"
+lines = [1, 60]
+
+[[samples]]
+path = "docs/2.0/clients/c/appender.md"
+label = "Markdown with a pre-rendered HTML code listing, H4/H5 API entries"
+lines = [45, 125]
+
+[[samples]]
+path = "docs/2.0/clients/cli/dot_commands.md"
+label = "Table-heavy page with Kramdown inline attributes"
+lines = [1, 40]
+
+[[samples]]
+path = "docs/2.0/clients/adbc.md"
+label = "Code-heavy page with a {% raw %} block containing Go composite literals"
+lines = [300, 340]
+
+[[samples]]
+path = "docs/1.5/clients/overview.md"
+label = "Site variables, {% if %}/{% else %} with literal fallback versions, tooltip includes"
+
+[[samples]]
+path = "docs/2.0/clients/odbc/macos.md"
+label = "latest_client include driving variables inside links and code"
+lines = [1, 40]
+
+[[samples]]
+path = "docs/1.2/index.md"
+label = "Landing page (excluded from the corpus)"
+
+[[samples]]
+path = "docs/1.4/lakehouse_formats.md"
+label = "Markdown inside HTML (<details markdown='1'>) with nested code"
+lines = [40, 80]
+
+# S3b additions: release posts (decision L2) and a conditional inside link URLs (decision S3-D1).
+[[samples]]
+path = "_posts/2026-10-21-announcing-duckdb-200.md"
+label = "Release post (source type release_post): post_url links, callouts, Markdown inside a diagram <div>"
+lines = [15, 80]
+
+[[samples]]
+path = "_posts/2026-06-17-announcing-duckdb-145.md"
+label = "Release post: a complete LTS patch announcement"
+
+[[samples]]
+path = "docs/1.5/clients/odbc/linux.md"
+label = "Conditional with a hard-coded fallback inside link URLs and code (decision S3-D1, option B)"
+lines = [24, 40]

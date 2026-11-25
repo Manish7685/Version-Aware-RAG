@@ -1,0 +1,48 @@
+# Environments
+.venv/
+.probe-envs/
+
+# Secrets (commit .env.example only)
+.env
+.env.*
+!.env.example
+
+# Python build and caches
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Corpus cache and build outputs (RAG-M3); only data/manifest/ is committed
+data/cache/
+data/build/
+
+# Restricted evidence text (RAG-M4 D1): release-note and release-post spans stay local
+data/evidence/local/
+
+# Generated outputs (reports that are meant to be committed are added explicitly)
+results/*
+!results/.gitkeep
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# RAG-M4 S3: Gemini drafting cache and generated V0 drafts stay local (never committed or uploaded)
+benchmark/drafts/
+
+# Frontend dependencies (npm install)
+node_modules/
+*.tsbuildinfo
+
+# Working copies of the proposed review sheet and the advisory screen output (local only)
+benchmark/review/proposed/*.csv
+benchmark/review/proposed/screen_report.md

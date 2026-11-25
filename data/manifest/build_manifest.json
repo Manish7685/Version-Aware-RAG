@@ -1,0 +1,123 @@
+{
+  "counts": {
+    "by_version": {
+      "1.2": 4757,
+      "1.3": 5500,
+      "1.4": 5794,
+      "1.5": 6456,
+      "2.0": 9151
+    },
+    "empty_sections": 193,
+    "logical_corpus_chunks": 31680,
+    "pages": 2022,
+    "release_note_chunks": 22,
+    "unresolved": 0,
+    "version_file_chunks": 31658
+  },
+  "generator": "vrag corpus build (RAG-M3 S5a)",
+  "inputs": {
+    "chunker_version": "s4-1",
+    "chunking_config_sha256": "cd7995debe6b22ccb0f9fa78208acbc1590658b4512342ebf7bc8f93feed75f0",
+    "corpus_config_sha256": "bcf3df123351f3a8f5d67a22e9f27cea7d85cd6a97eec7a8e194f5fd55cab587",
+    "corpus_manifest_sha256": "a5d953fb4422f93c98268e1fd2fdfc58e287d1fcb42d974fa3c0a26b5764e567",
+    "parser_version": "s3b-1",
+    "parsing_config_sha256": "eb4bb9932d8955c8ba1f1f3d740cb511b6e5a487caa9c43f6f7d4ffa9a25ea00",
+    "release_bodies": {
+      "v1.2.1": "3c2d8e0de4a56f3cf795e70e9a20ccb3e3582f77dc1eebd5e490014f3c08b8d4",
+      "v1.2.2": "803880ca42eb79676bf8ac76154616441e1a9cf3080f4854612be803eb0cabfa",
+      "v1.3.1": "f9febe970d61bcd8af89fe4ced6dfd234105a34ed1ab3263655b0efb378d7408",
+      "v1.3.2": "e86f15c67ee2bf8cfe4c08bd186666e7cbbbf740cb764061903569fe48240074"
+    },
+    "source_commit": "d01484462710d49206816c9eeaeb822361ebe81c"
+  },
+  "library": "duckdb",
+  "logical_corpus": [
+    "data/build/chunks/1.2.jsonl",
+    "data/build/chunks/1.3.jsonl",
+    "data/build/chunks/1.4.jsonl",
+    "data/build/chunks/1.5.jsonl",
+    "data/build/chunks/2.0.jsonl",
+    "data/build/chunks/github_releases.jsonl"
+  ],
+  "outputs": [
+    {
+      "bytes": 13464853,
+      "path": "data/build/chunks/1.2.jsonl",
+      "records": 4757,
+      "sha256": "e7b5553179955604289b049d51385e19d0b92591d062445ad3de7d409e6b2d43"
+    },
+    {
+      "bytes": 15635166,
+      "path": "data/build/chunks/1.3.jsonl",
+      "records": 5500,
+      "sha256": "0e1f489f956d761494f74f11ef2414b34bf41366445f80adee9893119a3f17bf"
+    },
+    {
+      "bytes": 16502625,
+      "path": "data/build/chunks/1.4.jsonl",
+      "records": 5794,
+      "sha256": "490dd7b9df50d5815631129a09e11666fa5b8896e45660a012acb5144ffd70eb"
+    },
+    {
+      "bytes": 18542102,
+      "path": "data/build/chunks/1.5.jsonl",
+      "records": 6456,
+      "sha256": "5c25ed2cdbabe1da55c127fd32fb33e7bf25593be932e45ce672f82505c13930"
+    },
+    {
+      "bytes": 26516905,
+      "path": "data/build/chunks/2.0.jsonl",
+      "records": 9151,
+      "sha256": "957f4302741f8aac4cb1edbb8b8339c34763d1ae21000a3aecc9c0dc2d4f9e4c"
+    },
+    {
+      "bytes": 50702,
+      "path": "data/build/chunks/empty_sections.jsonl",
+      "records": 193,
+      "sha256": "88c79a38a38fdb4c4774779f65c44c179aecdd94e915775598d0a9b27a9c5bce"
+    },
+    {
+      "bytes": 2640,
+      "path": "data/manifest/chunk_manifest.json",
+      "records": null,
+      "sha256": "c755119708c66874f741e89762841281768be56a6b9a8e4e8f5389f6d385d4d2"
+    },
+    {
+      "bytes": 57309,
+      "path": "docs/reports/RAG-M3_S4_chunking.md",
+      "records": null,
+      "sha256": "5bef5429361aa24d2aaca119aa2311e78fe377b88d016126a088e03c3265c0bd"
+    },
+    {
+      "bytes": 68059,
+      "path": "data/build/chunks/github_releases.jsonl",
+      "records": 22,
+      "sha256": "ad110e6b75a02e86bf2844404ca5f40caf1c044667489e6b34e62db2f3f3057c"
+    },
+    {
+      "bytes": 2871,
+      "path": "data/manifest/release_note_chunk_manifest.json",
+      "records": null,
+      "sha256": "401922a82ae38335a869e29079c07d94ced76fe3b800cc821ff00498e67d65db"
+    },
+    {
+      "bytes": 5538,
+      "path": "docs/reports/RAG-M3_S4d_release_notes.md",
+      "records": null,
+      "sha256": "398e67a8cd665576c0b73d9632bcd16cd180aa2ce909708f5e9ee8a813b49a66"
+    },
+    {
+      "bytes": 0,
+      "path": "data/build/unresolved.jsonl",
+      "records": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 95142,
+      "path": "data/build/build_report.json",
+      "records": null,
+      "sha256": "08b565173e8beec07ccbe512533f6b230fe8f9b3e3baa2dde76e20f51c3f8888"
+    }
+  ],
+  "schema_version": 1
+}

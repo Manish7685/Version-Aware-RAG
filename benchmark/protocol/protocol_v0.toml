@@ -1,0 +1,35 @@
+# Machine-readable part of benchmark protocol v0 (RAG-M4 S2). The human-readable protocol is
+# protocol_v0.md. tests/unit/benchmark/test_protocol.py checks this file against the design
+# (RAG-M1_design.md §3) and the prompt files against their sha256 values.
+
+version = "v0"
+status = "draft for the pilot, awaiting owner review"
+
+answer_types = ["value", "type_name", "identifier", "version", "yes_no", "sql_expression", "none"]
+
+[pilot_composition]
+T1 = 11
+T2 = 15
+T3 = 9
+T4 = 7
+T5 = 8
+t2_min_sets_spanning_three_versions = 5
+
+[reason_codes]
+R1 = "ambiguous target version"
+R2 = "gold answer wrong for the target version"
+R3 = "evidence spans insufficient or wrong"
+R4 = "wrong type"
+R5 = "answer leaks into the question (copied identifiers)"
+R6 = "trivial or unnatural question"
+R7 = "near-duplicate"
+R8 = "docs/runtime conflict mishandled"
+R9 = "other, with a comment"
+
+[prompts]
+"draft_common.md" = "bb9a465e52ab0b91d3acdf5e5161fdf57e84717035124fe9337927f8d595144a"
+"draft_T1.md" = "66b591fa81b42555f5761fe7ee014468c244dac24bb228bb8ae2b53162594162"
+"draft_T2.md" = "f4b8937c2c951d3b7058c934588b379261a171ac6e9c808687143c5c49d5426d"
+"draft_T3.md" = "c41541d0ac102007eea0dd1b00c789054cdccc2091c3c45fa755997fa83c2a1c"
+"draft_T4.md" = "3fbe9e55675ebccd29ebb6511edbadb38d9c6e0d7aa307d45d61587efeac2f5b"
+"draft_T5.md" = "a96fc067dac7970cc6c306dd4524e09b4d7639f4352ba3e24a15fcf5e4b67445"

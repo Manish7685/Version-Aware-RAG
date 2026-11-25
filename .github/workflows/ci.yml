@@ -1,0 +1,603 @@
+# CI (RAG-M2 skeleton, RAG-M3 corpus rebuild, RAG-M9 evaluation gate in the eval-gate job).
+# Actions are pinned to full commit SHAs (tag in the trailing comment) so a moved tag
+# cannot change what runs.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.13.9"
+  PYTHONUTF8: "1"
+
+jobs:
+  checks:
+    name: lint, types, tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    # The retrieval stack (torch, sentence-transformers, FAISS) made the install and the suite
+    # longer than the original 15-minute budget.
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Install Python (from .python-version)
+        run: uv python install
+      - name: Install locked environment (fails if uv.lock is out of date)
+        run: uv sync --locked
+      - name: Smoke test (fresh clone)
+        run: uv run pytest -m smoke
+      - name: Ruff lint
+        run: uv run ruff check .
+      - name: Ruff format check
+        run: uv run ruff format --check .
+      - name: Mypy (strict)
+        run: uv run mypy
+      - name: Full test suite
+        run: uv run pytest
+
+  pre-commit:
+    name: pre-commit hooks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv python install
+      - run: uv sync --locked
+      - name: Run all hooks
+        run: uv run pre-commit run --all-files --show-diff-on-failure
+
+  linux-probe-check:
+    # RAG-M1 assumption A2 / IR-4: the behavioural probes give the same results on Linux
+    # (manylinux wheels) as the recorded Windows run.
+    name: Linux probe check (assumption A2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv python install
+      - run: uv sync --locked
+      - name: Run probes on all six DuckDB packages and compare
+        run: bash scripts/probes/run_probes.sh results/probes/probe_results_linux.jsonl
+      - name: Upload raw probe output
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: probe-results-linux
+          path: results/probes/probe_results_linux.jsonl
+          if-no-files-found: error
+
+  secret-scan:
+    name: secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Job-level permissions replace the workflow default for this job only. gitleaks-action lists
+    # a pull request's commits (GET /repos/{owner}/{repo}/pulls/{n}/commits), which needs
+    # pull-requests: read on a private repository; contents: read is restated for checkout.
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  corpus-rebuild:
+    # RAG-M3 S6a (docs/design/RAG-M3_S6_ci.md §3). Two independent fresh checkouts each fetch the
+    # pinned sources and build the corpus: the committed evidence must be reproduced byte for byte,
+    # every check must pass, and both builds must produce identical outputs. Release API calls use
+    # only the built-in GITHUB_TOKEN; data/ is never cached; the only artifacts are hashes and logs,
+    # never corpus text, release bodies, release posts or caches. No network-drift check here.
+    name: corpus rebuild (fresh checkouts, two independent builds)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    env:
+      EXPECTED_CORPUS_TESTS: "50"
+    steps:
+      - name: Checkout A
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: a
+          persist-credentials: false
+          # Full history in A, where the corpus tests run (no test reads an earlier commit: the S2
+          # manifest is checked against pinned digests). B only builds and compares: shallow.
+          fetch-depth: 0
+      - name: Checkout B (independent)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: b
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Install Python and the locked environment (A and B)
+        run: |
+          for d in a b; do
+            (cd "$d" && uv python install && uv sync --locked)
+          done
+      - name: Environment facts (git 2.44 or later is required by build --check)
+        run: |
+          git --version
+          nproc
+          free -m
+          v="$(git --version | awk '{print $3}')"
+          if ! printf '2.44\n%s\n' "$v" | sort -V -C; then
+            echo "::error::git $v is older than 2.44; build --check relies on GIT_NO_LAZY_FETCH"
+            exit 1
+          fi
+          mkdir -p evidence
+
+      # ---- Build A: fresh fetch, verification, build, every check -------------------------
+      - name: "A: fetch the pinned docs source"
+        working-directory: a
+        run: uv run vrag corpus fetch
+      - name: "A: fetch the approved release notes (built-in GITHUB_TOKEN)"
+        working-directory: a
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: uv run vrag corpus releases fetch
+      - name: "A: verify the corpus manifest, docs source and release notes"
+        working-directory: a
+        run: |
+          uv run vrag corpus manifest --check
+          uv run vrag corpus verify
+          uv run vrag corpus releases verify
+      - name: "A: build"
+        working-directory: a
+        run: uv run vrag corpus build
+      - name: "A: committed evidence reproduced byte for byte"
+        working-directory: a
+        run: |
+          git status --porcelain
+          test -z "$(git status --porcelain)"
+          git diff --exit-code
+      - name: "A: S4 chunk commands and build check agree"
+        working-directory: a
+        run: |
+          uv run vrag corpus chunk --check
+          uv run vrag corpus releases chunk --check
+          uv run vrag corpus build --check
+      - name: "A: validate (uploaded log sanitized; exit status preserved)"
+        working-directory: a
+        # The raw output is never printed or uploaded: findings can contain source-derived text
+        # (for example a section path, which is heading text). The rule-aware sanitizer keeps
+        # each finding's severity and rule code and rebuilds its message only from a known
+        # template of that rule with typed fields (file locations, corpus paths, chunk ids,
+        # versions, enum values, counts); free-form payloads are always redacted, and any message
+        # that matches no template is withheld whole. The step still exits with validate's status.
+        run: |
+          status=0
+          uv run vrag corpus validate > ../validate-raw.txt 2>&1 || status=$?
+          uv run python -I - ../validate-raw.txt ../evidence/validate.txt <<'PY'
+          # BEGIN validate-log-sanitizer
+          import json
+          import re
+          import sys
+
+          raw_path, out_path = sys.argv[1], sys.argv[2]
+
+          # Typed fields. Every value kept in the output matches one of these shapes; nothing else
+          # from a message survives except the fixed template text.
+          FIELDS = {
+              "WHERE": r"(?:\d\.\d|github_releases)\.jsonl:\d+",
+              "FILE": r"(?:\d\.\d|github_releases)\.jsonl",
+              "PATH": r"(?:docs/\d\.\d/[A-Za-z0-9_./-]+\.md|_posts/\d{4}-\d\d-\d\d-[A-Za-z0-9-]+\.md|releases/tag/v\d+\.\d+\.\d+)",
+              "SPAN": r"(?:docs/\d\.\d/[A-Za-z0-9_./-]+\.md|_posts/\d{4}-\d\d-\d\d-[A-Za-z0-9-]+\.md|releases/tag/v\d+\.\d+\.\d+):\d+-\d+",
+              "OUT": r"(?:data|docs)/[A-Za-z0-9_./-]+",
+              "REPO": r"[A-Za-z0-9_.][A-Za-z0-9_./-]*",
+              "JSON": r"[a-z_]+\.json",
+              "EXC": r"[A-Za-z_][A-Za-z0-9_]*",
+              "CHUNK": r"c-[0-9a-f]{20}",
+              "VER": r"\d\.\d",
+              "SEMVER": r"\d+\.\d+\.\d+",
+              "SEMVER_OR_NONE": r"(?:\d+\.\d+\.\d+|None)",
+              "TAG": r"v\d+\.\d+\.\d+",
+              "INT": r"\d+",
+              "KIND": r"(?:docs_page|release_post|migration_guide|github_release)",
+              "STYPE": r"(?:documentation|changelog)",
+              "BLOCK": r"(?:heading|paragraph|list|code|table|blockquote|html_text|navigation|api_entry)",
+              "INPUT": r"(?:source_commit|corpus_config_sha256|parsing_config_sha256|chunking_config_sha256|corpus_manifest_sha256|parser_version|chunker_version|release_bodies)",
+              "OVERSIZE": r"\{(?:'(?:code_block|table_row|list_item|api_entry_block)': \d+(?:, (?='))?)*\}",
+              "NEAR": (r"(?:docs/\d\.\d/[A-Za-z0-9_./-]+\.md) \(\d\.\d, \d+ words\)"
+                       r"(?:; (?:docs/\d\.\d/[A-Za-z0-9_./-]+\.md) \(\d\.\d, \d+ words\))*"),
+              "REDACT": r".+?",  # free-form payload: matched only to be replaced, never copied
+          }
+
+          # Every message template of vrag corpus validate (validate.py), per rule. When a validate.py
+          # message is added or changed, add or update its template here under the same rule: copy
+          # the fixed text, write each interpolated value as a typed field from FIELDS, and use
+          # {REDACT} for anything free-form (headings, exception text, nested problem text).
+          # tests/unit/test_ci_corpus_job.py::test_every_validate_message_has_a_sanitizer_template
+          # fails until every message site and every template here correspond one to one.
+          TEMPLATES = {
+              "R1a": ["{WHERE}: version {VER} in the {FILE} file",
+                      "{WHERE}: a GitHub release chunk outside github_releases.jsonl"],
+              "R1c": ["unresolved source {PATH} appears in a chunk file",
+                      "unresolved.jsonl:{INT}: invalid unresolved-source record"],
+              "R2a": ["{WHERE}: source_path {PATH} is not a manifest file",
+                      "{WHERE}: source hash or blob differs from the manifest",
+                      "{WHERE}: source commit or repository differs from the manifest",
+                      "{WHERE}: {PATH} is not a manifest release post",
+                      "{WHERE}: {PATH} is not an approved release"],
+              "R2b": ["{WHERE}: source_url is not the canonical page URL",
+                      "{WHERE}: source_url is not the post's canonical URL",
+                      "{WHERE}: source_url is not the release's canonical URL"],
+              "R3": ["{WHERE}: section_path empty or not rooted at the page title"],
+              "R3w": ["{INT} chunks use the section-path fallback"],
+              "R5": ["{WHERE}: source_kind {KIND} wrong for {PATH}",
+                     "{WHERE}: version {VER} does not match {PATH}",
+                     "{WHERE}: source_type {STYPE}, expected {STYPE}",
+                     "{WHERE}: version or introduced_in differs from the post record",
+                     "{WHERE}: source_type or source hash differs from the post record",
+                     "{WHERE}: version or introduced_in differs from the release record",
+                     "{WHERE}: release id, commit, hash or type differs from S2",
+                     "{WHERE}: behaviour_package {SEMVER} wrong for {VER}"],
+              "R6": ["{WHERE}: introduced_in must be set exactly for change sources",
+                     "{WHERE}: introduced_in {SEMVER_OR_NONE}, expected {SEMVER_OR_NONE}",
+                     "{WHERE}: introduced_in {REDACT} is not X.Y.Z",
+                     "{WHERE}: introduced_in {SEMVER} outside {VER}",
+                     "{WHERE}: introduced_in {SEMVER} after the package"],
+              "R7a": ["{WHERE}: attribution differs from the S2 record",
+                      "{WHERE}: attribution or licence_status empty"],
+              "R7b": ["{WHERE}: licence must be set exactly when licence_status is verified"],
+              "R7c": ["{WHERE}: licence fields differ from the docs classification (S1)",
+                      "{WHERE}: licence fields differ from the release-post record (D22)",
+                      "{WHERE}: release-note licence fields differ from S4-D5/S4-D12"],
+              "R7d": ["{REPO}: contains {INT} release-note line(s)",
+                      "{REPO}: contains {INT} release-post line(s)",
+                      "{REPO}: contains {INT} contributor handle(s)",
+                      "leak scan skipped: the committable file list is unavailable",
+                      "leak scan for release notes skipped: release cache unavailable",
+                      "leak scan for release posts skipped: docs cache unavailable"],
+              "R7e": ["short-quotation scan cannot run: the committable file list is unavailable",
+                      "short-quotation scan cannot run: release posts unavailable",
+                      "short-quotation scan cannot run: release post {PATH} missing or changed",
+                      "{REPO}:{INT}: quoted phrase of {INT} words matches release-post text"],
+              "R8a": ["{WHERE}: a merged chunk carries an API signature",
+                      "{WHERE}: api_signature must be set exactly for API entries",
+                      "{WHERE}: API entry {REDACT} split over units",
+                      "{WHERE}: merged chunk contains API entry {REDACT}"],
+              "R8b": ["{WHERE}: merged chunk does not reconstruct its sections",
+                      "{WHERE}: unmerged chunk lists merged paths"],
+              "R8c": ["{WHERE}: parts are not exactly 1..{INT}",
+                      "{WHERE}: parts disagree on path, kind, signature or count"],
+              "R8d": ["{WHERE}: {INT} tokens without oversize",
+                      "{WHERE}: oversize flag and reason inconsistent",
+                      "{WHERE}: overlap {INT} tokens over the budget",
+                      "{WHERE}: overlap where the S4 rules allow none",
+                      "{WHERE}: overlap line range inconsistent with overlap blocks"],
+              "R8e": ["{WHERE}: chunk from an excluded page {PATH}",
+                      "empty-section record for unknown page {PATH}",
+                      "{PATH}: included page with content has no chunks",
+                      "{PATH}: excluded page has chunks",
+                      "{PATH}: cannot be read for coverage ({REDACT})",
+                      "{TAG}: release body missing or differs from S2",
+                      "{SPAN}: heading not represented in any section path",
+                      "{SPAN}: {BLOCK} block not represented in the page's chunks ({INT} of {INT} parts missing)",
+                      "{PATH}: chunk {CHUNK} has an invalid line range",
+                      "{PATH}: chunk {CHUNK} ends after the last source line",
+                      "{PATH}: chunk {CHUNK} overlap is not before its lines",
+                      "{PATH}: chunk {CHUNK} is out of source order",
+                      "source coverage skipped for docs and posts: docs cache unavailable",
+                      "source coverage skipped for release notes: release cache unavailable"],
+              "R9a": ["corpus manifest: {REDACT}", "RAG-M1 evidence: {REDACT}"],
+              "R9b": ["manifest source: licence, licence_status or copyright missing",
+                      "manifest file {PATH}: hash, blob or size missing",
+                      "excluded file {PATH} has no reason",
+                      "release post {PATH}: licence fields or attribution missing",
+                      "release {TAG}: licence status or attribution wrong"],
+              "R9c": ["build manifest: schema_version is not 1",
+                      "build manifest: library or generator missing or wrong",
+                      "build manifest: logical_corpus differs from S5-D1 (5 files + releases)",
+                      "build manifest: counts missing",
+                      "build manifest: inputs missing",
+                      "build manifest: outputs missing",
+                      "build manifest: output entry {INT} has the wrong fields",
+                      "build manifest: output entry {INT} has an unsafe path {REDACT}",
+                      "build manifest: {OUT} listed twice",
+                      "build manifest: unknown output {OUT}",
+                      "{OUT}: sha256 differs from the build manifest",
+                      "{OUT}: byte count differs from the build manifest",
+                      "{OUT}: record count differs from the build manifest",
+                      "build manifest does not list {OUT}",
+                      "build manifest: input {INPUT} differs from the current one",
+                      "{JSON}: not a JSON object",
+                      "{JSON}: unreadable or not JSON ({EXC})"],
+              "R11": ["{INT} near-empty pages: {NEAR}"],
+              "R12": ["S4c output: {REDACT}",
+                      "S4d output: {REDACT}",
+                      "empty_sections.jsonl:{INT}: invalid empty-section record",
+                      "{JSON}: not a JSON object",
+                      "{JSON}: unreadable or not JSON ({EXC})"],
+              "R12a": ["{WHERE}: chunk_id {CHUNK} also at {WHERE}"],
+              "W-duplicates": ["{INT} chunk contents appear in two or more versions"],
+              "W-oversize": ["{INT} oversize chunks {OVERSIZE}"],
+          }
+
+          token = re.compile(r"\{([A-Z_]+)\}")
+
+
+          def compile_template(template):
+              parts = token.split(template)  # literal, field, literal, field, ...
+              pattern = "".join(
+                  re.escape(p) if i % 2 == 0 else f"({FIELDS[p]})" for i, p in enumerate(parts)
+              )
+              return re.compile(pattern), parts
+
+
+          COMPILED = {rule: [compile_template(t) for t in ts] for rule, ts in TEMPLATES.items()}
+          finding = re.compile(r"^(ERROR|WARNING) +\[([A-Za-z0-9-]+)\] (.*)$")
+          missing = re.compile(r"^MISSING (?:data|docs)/[A-Za-z0-9_./-]+$")
+          result = re.compile(r"^RESULT: (PASSED|FAILED) \([A-Za-z0-9 ,]*\)$")
+          safe_key = re.compile(r"^[A-Za-z0-9_.|-]+$")
+          stats = {"lines": 0, "redacted": 0, "withheld": 0}
+
+
+          def rebuild(rule, message):
+              """The message rebuilt from a known template of its rule, or None."""
+              for pattern, parts in COMPILED.get(rule, []):
+                  m = pattern.fullmatch(message)
+                  if m is None:
+                      continue
+                  out, values = [], iter(m.groups())
+                  for i, part in enumerate(parts):
+                      if i % 2 == 0:
+                          out.append(part)
+                      elif part == "REDACT":
+                          next(values)
+                          stats["redacted"] += 1
+                          out.append("<redacted>")
+                      else:
+                          out.append(next(values))
+                  return "".join(out)
+              return None
+
+
+          def safe_counts(value):
+              if isinstance(value, dict):
+                  return all(isinstance(k, str) and safe_key.match(k) and safe_counts(v) for k, v in value.items())
+              return isinstance(value, (int, float))
+
+
+          def withheld(text):
+              stats["withheld"] += 1
+              return text
+
+
+          out = []
+          with open(raw_path, encoding="utf-8", errors="replace") as fh:
+              lines = fh.read().splitlines()
+          for line in lines:
+              stats["lines"] += 1
+              m = finding.match(line)
+              if m:
+                  severity, rule = m.group(1), m.group(2)
+                  message = rebuild(rule, m.group(3))
+                  if message is None:
+                      message = withheld("<message withheld by the CI sanitizer: unrecognised format>")
+                  out.append(f"{severity:<7} [{rule}] {message}")
+              elif missing.match(line) or result.match(line):
+                  out.append(line)
+              elif line.startswith("counts: "):
+                  try:
+                      ok = safe_counts(json.loads(line[8:]))
+                  except ValueError:
+                      ok = False
+                  out.append(line if ok else withheld("counts: <withheld by the CI sanitizer: unexpected structure>"))
+              elif line.startswith("corpus manifest cannot be loaded: "):
+                  stats["redacted"] += 1
+                  out.append("corpus manifest cannot be loaded: <redacted>")
+              else:
+                  out.append(withheld("<line withheld by the CI sanitizer: unrecognised format>"))
+          out.append(
+              f"[CI sanitizer: {stats['lines']} lines, {stats['redacted']} fields redacted, "
+              f"{stats['withheld']} lines withheld; the exit status of vrag corpus validate is preserved]"
+          )
+          with open(out_path, "w", encoding="utf-8") as fh:
+              fh.write("\n".join(out) + "\n")
+          # END validate-log-sanitizer
+          PY
+          cat ../evidence/validate.txt
+          exit "$status"
+      - name: "A: corpus tests (collected = executed = expected; 0 skipped, failed or errors)"
+        working-directory: a
+        # --tb=no and -rN keep assertion values and skip or failure reasons (any of which could quote
+        # corpus text) out of the log and the uploaded test log (-rN overrides the project's -ra);
+        # every count, including each skip, comes from the JUnit XML, not from the console output.
+        run: |
+          uv run pytest -m corpus --collect-only -q > ../corpus-collect.txt
+          status=0
+          uv run pytest -m corpus --tb=no -rN --junitxml=../corpus-tests.xml \
+            > ../evidence/corpus-tests.txt 2>&1 || status=$?
+          cat ../evidence/corpus-tests.txt
+          uv run python -I - ../corpus-collect.txt ../corpus-tests.xml "$EXPECTED_CORPUS_TESTS" <<'PY'
+          # BEGIN corpus-junit-check
+          import re
+          import sys
+          import xml.etree.ElementTree as ET
+
+          collect_path, junit_path, expected = sys.argv[1], sys.argv[2], int(sys.argv[3])
+          with open(collect_path, encoding="utf-8") as fh:
+              collected = [ln for ln in fh.read().splitlines() if re.match(r"^tests/\S+::\S", ln)]
+          root = ET.parse(junit_path).getroot()
+          suites = [root] if root.tag == "testsuite" else root.findall("testsuite")
+          totals = {k: sum(int(s.get(k, "0")) for s in suites) for k in ("tests", "skipped", "failures", "errors")}
+          cases = [c for s in suites for c in s.iter("testcase")]
+          outcomes = {k: sum(1 for c in cases if c.find(k) is not None) for k in ("skipped", "failure", "error")}
+          problems = []
+          if len(collected) != expected:
+              problems.append(f"collected {len(collected)} corpus tests, expected {expected}")
+          if totals["tests"] != expected or len(cases) != expected:
+              problems.append(f"executed {totals['tests']} ({len(cases)} test cases), expected {expected}")
+          for key in ("skipped", "failures", "errors"):
+              if totals[key]:
+                  problems.append(f"{totals[key]} {key}")
+          for key, count in outcomes.items():
+              if count:
+                  problems.append(f"{count} test cases with <{key}>")
+          print(f"corpus tests: collected={len(collected)} executed={totals['tests']} cases={len(cases)} "
+                f"skipped={totals['skipped']} failures={totals['failures']} errors={totals['errors']} "
+                f"expected={expected}")
+          if problems:
+              print("::error::corpus tests: " + "; ".join(problems))
+              sys.exit(1)
+          # END corpus-junit-check
+          PY
+          exit "$status"
+
+      # ---- Build B: an independent checkout with its own fresh fetch and build -------------
+      - name: "B: fetch the pinned docs source"
+        working-directory: b
+        run: uv run vrag corpus fetch
+      - name: "B: fetch the approved release notes (built-in GITHUB_TOKEN)"
+        working-directory: b
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: uv run vrag corpus releases fetch
+      - name: "B: verify the corpus manifest, docs source and release notes"
+        working-directory: b
+        run: |
+          uv run vrag corpus manifest --check
+          uv run vrag corpus verify
+          uv run vrag corpus releases verify
+      - name: "B: build"
+        working-directory: b
+        run: uv run vrag corpus build
+      - name: "B: committed evidence reproduced byte for byte"
+        working-directory: b
+        run: |
+          git status --porcelain
+          test -z "$(git status --porcelain)"
+          git diff --exit-code
+
+      # ---- Compare: every output path and its SHA-256, A against B ----------------------------
+      - name: "Compare A and B (paths from build.ALL_OUTPUTS)"
+        run: |
+          (cd a && uv run python -c 'from version_aware_rag.corpus.build import ALL_OUTPUTS; print("\n".join(ALL_OUTPUTS))') > outputs.paths
+          test -s outputs.paths
+          for d in a b; do
+            : > "$d.sha256"
+            while IFS= read -r p; do
+              if [ ! -f "$d/$p" ]; then
+                echo "::error::missing output $d/$p"
+                exit 1
+              fi
+              (cd "$d" && sha256sum "$p") >> "$d.sha256"
+            done < outputs.paths
+            test "$(wc -l < "$d.sha256")" -eq "$(wc -l < outputs.paths)"
+          done
+          diff -u a.sha256 b.sha256
+          cp a.sha256 evidence/outputs.sha256
+          cat evidence/outputs.sha256
+          test -z "$(git -C a status --porcelain)"
+
+      - name: Upload evidence (output hashes, validation log, corpus-test log only)
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: corpus-rebuild-evidence
+          path: |
+            evidence/outputs.sha256
+            evidence/validate.txt
+            evidence/corpus-tests.txt
+          if-no-files-found: warn
+
+  # RAG-M9 evaluation-as-CI regression gate (design §6). It runs `vrag eval gate check` on the
+  # frozen V2 ci-gate split against the owner-approved baseline: exit 0 PASS/WARN, 1 BLOCK, 2 ERROR,
+  # so BLOCK and ERROR fail the pull request. CPU only, no API calls, no secrets beyond the built-in
+  # token for the release-note fetch the corpus build needs. CI never writes a baseline. Until the
+  # owner has frozen the split and approved a baseline (design §6.3: calibrate before enabling) the
+  # job reports that the gate is not enabled yet and runs nothing else.
+  eval-gate:
+    name: evaluation regression gate (RAG-M9)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Is the gate enabled? (frozen ci-gate split and approved baseline)
+        id: enabled
+        run: |
+          if [ -f benchmark/splits/ci_gate.jsonl ] && [ -f benchmark/gate/baseline.json ] \
+             && grep -Eq '^baseline_sha256 = "[0-9a-f]{64}"' configs/gate.toml; then
+            echo "on=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "on=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Gate not enabled yet: needs benchmark/splits/ci_gate.jsonl, benchmark/gate/baseline.json and its approved sha256 in configs/gate.toml"
+          fi
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        if: steps.enabled.outputs.on == 'true'
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Install Python and the locked environment
+        if: steps.enabled.outputs.on == 'true'
+        run: uv python install && uv sync --locked
+      - name: Rebuild the corpus from the manifest
+        if: steps.enabled.outputs.on == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          uv run vrag corpus fetch
+          uv run vrag corpus releases fetch
+          uv run vrag corpus build
+          test -z "$(git status --porcelain data/manifest)"
+      - name: Build the BM25 and dense indexes
+        if: steps.enabled.outputs.on == 'true'
+        run: uv run vrag index build --methods bm25,dense
+      - name: Gate check against the approved baseline
+        if: steps.enabled.outputs.on == 'true'
+        run: |
+          status=0
+          uv run vrag eval gate check --method hybrid || status=$?
+          cat results/gate/report.md >> "$GITHUB_STEP_SUMMARY" || true
+          exit "$status"
+      - name: Upload the gate report (item ids and metrics only)
+        if: always() && steps.enabled.outputs.on == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: eval-gate-report
+          path: results/gate/report.md
+          if-no-files-found: warn

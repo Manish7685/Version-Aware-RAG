@@ -1,0 +1,10 @@
+# CI regression gate configuration (RAG-M9, design §6).
+#
+# baseline_sha256 is the sha256 of the owner-approved benchmark/gate/baseline.json. Only the owner
+# sets it, in a dedicated baseline-update PR whose approval is logged in EXECUTION_TRACKER.md
+# (design §6.2 "Baseline protection", D14). An empty value means no baseline has been approved
+# yet; the enforced gate then reports ERROR. CI never writes this file or the baseline.
+
+[gate]
+method = "hybrid"
+baseline_sha256 = ""
